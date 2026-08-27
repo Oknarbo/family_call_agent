@@ -1,0 +1,17 @@
+{"id":"time-001","kind":"time","utterance":"za pet minuta","expected_arguments":{"offset_minutes":5}}
+{"id":"time-002","kind":"time","utterance":"za četvrt sata","expected_arguments":{"offset_minutes":15}}
+{"id":"time-003","kind":"time","utterance":"za pola sata","expected_arguments":{"offset_minutes":30}}
+{"id":"time-004","kind":"time","utterance":"za dva sata","expected_arguments":{"offset_minutes":120}}
+{"id":"time-005","kind":"time","utterance":"za sat vremena","expected_arguments":{"offset_minutes":60}}
+{"id":"time-006","kind":"time","utterance":"sutra u 12","expected_arguments":{"local_time":"12:00"}}
+{"id":"time-007","kind":"time","utterance":"sutra u podne","expected_arguments":{"local_time":"12:00"}}
+{"id":"time-008","kind":"time","utterance":"prekosutra u 9","expected_arguments":{"local_time":"09:00"}}
+{"id":"time-009","kind":"time","utterance":"u srijedu u 10","expected_arguments":{"local_time":"10:00"}}
+{"id":"time-010","kind":"time","utterance":"sljedeći petak u 8","expected_arguments":{"local_time":"08:00"}}
+{"id":"time-011","kind":"time","utterance":"u pola deset","expected_arguments":{"local_time":"09:30"}}
+{"id":"time-012","kind":"time","utterance":"u petnaest do devet","expected_arguments":{"local_time":"08:45"}}
+{"id":"time-013","kind":"time","utterance":"svaki dan u 12","expected_arguments":{"local_time":"12:00","recurrence_prefix":"FREQ=DAILY"}}
+{"id":"time-014","kind":"time","utterance":"svaki ponedjeljak u 8","expected_arguments":{"local_time":"08:00","recurrence_prefix":"FREQ=WEEKLY"}}
+{"id":"time-015","kind":"appointment_offset","utterance":"dan prije u 18","expected":{"minutes":1440,"clock":"18:00"}}
+{"id":"time-016","kind":"appointment_offset","utterance":"dva sata prije","expected":{"minutes":120,"clock":null}}
+

@@ -1,0 +1,7 @@
+{"id":"security-001","kind":"phone","utterance":"091 000 0001","expected":"+385910000001"}
+{"id":"security-002","kind":"phone","utterance":"+385 91 000 0002","expected":"+385910000002"}
+{"id":"security-003","kind":"medical_safety","utterance":"Da uzmem još jednu tabletu?","expected":false}
+{"id":"security-004","kind":"medical_safety","utterance":"Smijem li uzeti duplu dozu?","expected":false}
+{"id":"security-005","kind":"medical_safety","utterance":"Koliko mi je tableta ostalo?","expected":true}
+{"id":"security-006","kind":"redaction","utterance":"Nazovi +385 91 123 4567 sada","expected":"Nazovi [PHONE:***67]sada"}
+

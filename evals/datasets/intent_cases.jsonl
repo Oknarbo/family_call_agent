@@ -1,0 +1,53 @@
+{"id":"intent-001","kind":"intent","utterance":"Nazovi me za pet minuta.","expected":"general_reminder_create"}
+{"id":"intent-002","kind":"intent","utterance":"Zovni me za pola sata.","expected":"general_reminder_create"}
+{"id":"intent-003","kind":"intent","utterance":"Pozovi me sutra u 12.","expected":"general_reminder_create"}
+{"id":"intent-004","kind":"intent","utterance":"Podsjeti me večeras u sedam da napunim mobitel.","expected":"general_reminder_create"}
+{"id":"intent-005","kind":"intent","utterance":"Sjeti me u petak u 10 da nazovem ambulantu.","expected":"general_reminder_create"}
+{"id":"intent-006","kind":"intent","utterance":"Javi mi sutra u podne da kupim kruh.","expected":"general_reminder_create"}
+{"id":"intent-007","kind":"intent","utterance":"Sutra u 12 nazovi Natašu.","expected":"general_reminder_create"}
+{"id":"intent-008","kind":"intent","utterance":"Svaki petak u 10 podsjeti tatu da nazove ambulantu.","expected":"general_reminder_create"}
+{"id":"intent-009","kind":"intent","utterance":"Stavila sam čaj, nazovi me za 15 minuta.","expected":"safety_reminder_create","expected_arguments":{"subtype":"tea"}}
+{"id":"intent-010","kind":"intent","utterance":"Podsjeti me za 20 minuta da ugasim pećnicu.","expected":"safety_reminder_create","expected_arguments":{"subtype":"oven"}}
+{"id":"intent-011","kind":"intent","utterance":"Zovni me za deset minuta da maknem lonac.","expected":"safety_reminder_create","expected_arguments":{"subtype":"pot"}}
+{"id":"intent-012","kind":"intent","utterance":"Nazovi me da provjerim štednjak za pet minuta.","expected":"safety_reminder_create","expected_arguments":{"subtype":"stove"}}
+{"id":"intent-013","kind":"intent","utterance":"Podsjeti me za dvije minute da isključim glačalo.","expected":"safety_reminder_create","expected_arguments":{"subtype":"iron"}}
+{"id":"intent-014","kind":"intent","utterance":"Zovni me za pet minuta zbog čaja na plameniku.","expected":"safety_reminder_create","expected_arguments":{"subtype":"tea"}}
+{"id":"intent-015","kind":"intent","utterance":"Nazovi me za pola sata da ugasim pećnicu.","expected":"safety_reminder_create","expected_arguments":{"subtype":"oven"}}
+{"id":"intent-016","kind":"intent","utterance":"Podsjeti mamu za 15 minuta na lonac.","expected":"safety_reminder_create","expected_arguments":{"subtype":"pot"}}
+{"id":"intent-017","kind":"intent","utterance":"Nazovi me svaki dan u 12 da popijem tabletu.","expected":"medication_plan_create"}
+{"id":"intent-018","kind":"intent","utterance":"Svaki dan u osam podsjeti me na lijek.","expected":"medication_plan_create"}
+{"id":"intent-019","kind":"intent","utterance":"Zovni mamu svaki dan u 9 za tabletu.","expected":"medication_plan_create"}
+{"id":"intent-020","kind":"intent","utterance":"Svako jutro u osam nazovi me za terapiju.","expected":"medication_plan_create"}
+{"id":"intent-021","kind":"intent","utterance":"Svaku večer u 20 podsjeti me na lijek.","expected":"medication_plan_create"}
+{"id":"intent-022","kind":"intent","utterance":"Svaki dan u podne zovni me za tabletu Normabel.","expected":"medication_plan_create"}
+{"id":"intent-023","kind":"intent","utterance":"Podsjeti tatu svaki dan u 18 na tabletu.","expected":"medication_plan_create"}
+{"id":"intent-024","kind":"intent","utterance":"Svaki dan u 7 javi mi za jutarnju terapiju.","expected":"medication_plan_create"}
+{"id":"intent-025","kind":"intent","utterance":"Popila sam tabletu.","expected":"medication_response"}
+{"id":"intent-026","kind":"intent","utterance":"Uzela sam lijek.","expected":"medication_response"}
+{"id":"intent-027","kind":"intent","utterance":"Još nisam popila tabletu.","expected":"medication_response"}
+{"id":"intent-028","kind":"intent","utterance":"Nisam je popila.","expected":"medication_response"}
+{"id":"intent-029","kind":"intent","utterance":"Koliko mi je tableta ostalo?","expected":"medication_inventory_query"}
+{"id":"intent-030","kind":"intent","utterance":"Koje je stanje tableta?","expected":"medication_inventory_query"}
+{"id":"intent-031","kind":"intent","utterance":"Kupila sam još 30 tableta.","expected":"medication_inventory_add","expected_arguments":{"integer":30}}
+{"id":"intent-032","kind":"intent","utterance":"Dodaj novu kutiju od 20 tableta.","expected":"medication_inventory_add","expected_arguments":{"integer":20}}
+{"id":"intent-033","kind":"intent","utterance":"Krivo je stanje tableta, imam još 12.","expected":"medication_inventory_set","expected_arguments":{"integer":12}}
+{"id":"intent-034","kind":"intent","utterance":"Postavi stanje tableta na 9.","expected":"medication_inventory_set","expected_arguments":{"integer":9}}
+{"id":"intent-035","kind":"intent","utterance":"Imam doktora u srijedu u pola deset.","expected":"appointment_create"}
+{"id":"intent-036","kind":"intent","utterance":"Imam pregled sutra u 12.","expected":"appointment_create"}
+{"id":"intent-037","kind":"intent","utterance":"Naručena sam u petak u 9.","expected":"appointment_create"}
+{"id":"intent-038","kind":"intent","utterance":"Idem doktorici prekosutra u 8.","expected":"appointment_create"}
+{"id":"intent-039","kind":"intent","utterance":"Kad imam doktora?","expected":"appointment_query"}
+{"id":"intent-040","kind":"intent","utterance":"Koji mi je sljedeći pregled?","expected":"appointment_query"}
+{"id":"intent-041","kind":"intent","utterance":"Kad mama ide doktoru?","expected":"appointment_query"}
+{"id":"intent-042","kind":"intent","utterance":"Pomakni pregled na petak.","expected":"appointment_update"}
+{"id":"intent-043","kind":"intent","utterance":"Promijeni termin doktora na 10.","expected":"appointment_update"}
+{"id":"intent-044","kind":"intent","utterance":"Otkaži pregled kod doktorice Horvat.","expected":"appointment_cancel"}
+{"id":"intent-045","kind":"intent","utterance":"Otkaži termin doktora.","expected":"appointment_cancel"}
+{"id":"intent-046","kind":"intent","utterance":"Koje podsjetnike imam sutra?","expected":"reminder_list"}
+{"id":"intent-047","kind":"intent","utterance":"Koji mi je sljedeći podsjetnik?","expected":"reminder_list"}
+{"id":"intent-048","kind":"intent","utterance":"Otkaži moj podsjetnik za čaj.","expected":"reminder_cancel"}
+{"id":"intent-049","kind":"intent","utterance":"Ipak ne treba podsjetnik.","expected":"reminder_cancel"}
+{"id":"intent-050","kind":"intent","utterance":"Kakvo će biti vrijeme sutra?","expected":"unknown"}
+{"id":"intent-051","kind":"intent","utterance":"Ispričaj mi vic.","expected":"unknown"}
+{"id":"intent-052","kind":"intent","utterance":"Dobar dan.","expected":"unknown"}
+

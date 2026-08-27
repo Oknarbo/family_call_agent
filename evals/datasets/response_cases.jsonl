@@ -1,0 +1,22 @@
+{"id":"confirm-001","kind":"confirmation","utterance":"da","expected":"confirmed"}
+{"id":"confirm-002","kind":"confirmation","utterance":"može","expected":"confirmed"}
+{"id":"confirm-003","kind":"confirmation","utterance":"u redu","expected":"confirmed"}
+{"id":"confirm-004","kind":"confirmation","utterance":"tako je","expected":"confirmed"}
+{"id":"confirm-005","kind":"confirmation","utterance":"može tako","expected":"confirmed"}
+{"id":"confirm-006","kind":"confirmation","utterance":"ne","expected":"rejected"}
+{"id":"confirm-007","kind":"confirmation","utterance":"otkaži","expected":"rejected"}
+{"id":"confirm-008","kind":"confirmation","utterance":"ipak ne treba","expected":"rejected"}
+{"id":"confirm-009","kind":"confirmation","utterance":"nije u 12 nego u 2","expected":"correction_requested"}
+{"id":"confirm-010","kind":"confirmation","utterance":"krivo si razumio","expected":"correction_requested"}
+{"id":"confirm-011","kind":"confirmation","utterance":"možda","expected":"unclear"}
+{"id":"med-001","kind":"medication_response","utterance":"jesam","expected":"user_reported_taken"}
+{"id":"med-002","kind":"medication_response","utterance":"popila sam","expected":"user_reported_taken"}
+{"id":"med-003","kind":"medication_response","utterance":"upravo sam je popila","expected":"user_reported_taken"}
+{"id":"med-004","kind":"medication_response","utterance":"nisam","expected":"user_reported_not_taken"}
+{"id":"med-005","kind":"medication_response","utterance":"još nisam","expected":"user_reported_not_taken"}
+{"id":"med-006","kind":"medication_response","utterance":"zaboravila sam","expected":"user_reported_not_taken"}
+{"id":"med-007","kind":"medication_response","utterance":"možda","expected":"unclear_response"}
+{"id":"med-008","kind":"medication_response","utterance":"ne sjećam se","expected":"unclear_response"}
+{"id":"med-009","kind":"medication_response","utterance":"nazovi me za deset minuta","expected":"call_later_requested"}
+{"id":"med-010","kind":"medication_response","utterance":"još pijem kavu","expected":"call_later_requested"}
+
