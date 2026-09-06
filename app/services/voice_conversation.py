@@ -11,8 +11,9 @@ from app.agent.state import ConversationState
 from app.config import Settings
 from app.dependencies import application_store
 from app.domain.enums import DeliveryStatus, OutboundCallPurpose, OutboundCallStatus, ReminderStatus
-from app.domain.exceptions import DomainError
+from app.domain.exceptions import DomainError, ProviderUnavailableError
 from app.domain.time_parser import NUMBER_WORDS
+from app.providers.llm.openai import OpenAILanguageProvider
 from app.repositories.protocols import Store
 from app.scheduler.planner import IN_FLIGHT, SchedulerPlanner
 from app.services.call_outcomes import CallOutcomeService
@@ -95,6 +96,21 @@ class VoiceConversation:
         return self.state.get("response_text") or "Možeš li ponoviti?", False
 
     async def _outbound_reply(self, text: str) -> tuple[str, bool]:
+        if self.settings.llm_provider == "openai" and classify_confirmation(text) == "unclear":
+            async with application_store(self.settings) as store:
+                FamilyDirectory(store).identify(self.caller_phone)
+                call = store.outbound_calls[self.outbound_id]  # type: ignore[index]
+                general = call.purpose == OutboundCallPurpose.GENERAL_REMINDER
+                question = call.message
+                store.abort()
+            if general:
+                try:
+                    normalized = await OpenAILanguageProvider(self.settings).normalize_turn(
+                        text, mode="outbound_general", question=question
+                    )
+                except ProviderUnavailableError:
+                    return "Nisam uspio obraditi odgovor. Pokušaj ponovno.", False
+                text = normalized or "nejasan odgovor"
         value = normalize_utterance(text)
         wants_snooze = self.awaiting_delay or bool(re.search(r"\b(nazovi|zovni|podsjeti)\b", value))
         if re.search(r"\b(ne|nemoj)\b", value):

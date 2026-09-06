@@ -5,7 +5,17 @@ from collections.abc import Mapping
 from typing import Any
 
 PHONE_PATTERN = re.compile(r"(?<!\d)(?:\+?\d[\s().-]?){7,15}(?!\d)")
-SENSITIVE_KEYS = {"authorization", "infobip_api_key", "deepgram_api_key", "api_key"}
+SENSITIVE_KEYS = {
+    "authorization",
+    "infobip_api_key",
+    "deepgram_api_key",
+    "api_key",
+    "openai_api_key",
+    "azure_speech_key",
+    "twilio_auth_token",
+    "app_secret_key",
+    "postgres_password",
+}
 
 
 def redact_phone(value: str) -> str:

@@ -25,6 +25,8 @@ def build(root: Path, destination: Path) -> int:
             "pyproject.toml",
             "README.md",
             "ROADMAP.md",
+            "OPENAI.md",
+            "LOCAL_ACCESS.md",
             "alembic.ini",
         )
     )

@@ -17,7 +17,9 @@ spoken reminders, an exact two-minute callback after a snooze request, and an in
 request followed by a scheduled callback. Short spoken confirmations are still unreliable.
 Local tests do not establish real-world speech accuracy or delivery guarantees.
 
-Language understanding currently uses **deterministic Croatian rules**, not an LLM.
+Language understanding defaults to **deterministic Croatian rules**. An optional OpenAI
+text interpretation layer is now available; see [OPENAI.md](OPENAI.md) for activation,
+costs and limitations. It has been tested with mocked responses, not a live API key.
 Some domain operations exist as tools but are not yet supported in natural conversation.
 The first audio bridge is **half duplex**: wait for Zvonko to finish before replying.
 Speech during playback is suppressed to avoid interpreting the assistant's own speech
@@ -139,7 +141,8 @@ Use `DATABASE_URL=sqlite+aiosqlite:///./zvonko-dev.db` and development providers
 Other callers include `tata`, `branko`, `nataša`, `sven` after registration, and `unknown`.
 Options include `--show-state`, `--simulate-due` and `--data zvonko-sandbox.json` for
 an explicit, separate JSON simulation. `--reset` is allowed only with `--data`.
-The CLI does not contact paid providers.
+With development language settings the CLI does not contact paid providers. Selecting
+OpenAI enables billable text interpretation in the SQL-backed CLI as well as live calls.
 
 Import existing development JSON into an **empty** migrated SQL database with
 `python -m scripts.import_development_data zvonko-dev.json`. Import preserves the original
@@ -316,10 +319,11 @@ deployment path. Development telephony never dials real numbers.
 
 ## Language-provider architecture
 
-Language, STT, TTS and telephony interfaces are replaceable. An external LLM may classify
-intents, extract typed arguments and phrase short questions. It must not bypass
-authorization, directly mutate inventory, or schedule calls without validation and
-confirmation. Adding an LLM does not fix audio the recognizer never delivers.
+Language, STT, TTS and telephony interfaces are replaceable. The optional OpenAI layer
+returns structured Croatian paraphrases for the existing parser. It cannot invoke tools,
+directly mutate inventory, or bypass authorization and confirmation. Calls to the model
+run outside SQL transactions, after checking the caller. Adding an LLM does not fix audio
+the recognizer never delivers. Medication and safety outcome classification remains deterministic.
 
 ## Tests and evaluations
 

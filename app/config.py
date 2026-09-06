@@ -25,6 +25,8 @@ class Settings(BaseSettings):
     sven_phone_e164: str | None = None
     llm_provider: str = "development"
     llm_model: str = "deterministic-hr"
+    openai_api_key: str | None = None
+    openai_timeout_seconds: int = Field(default=12, ge=2, le=30)
     stt_provider: str = "development"
     tts_provider: str = "development"
     telephony_provider: str = "development"
