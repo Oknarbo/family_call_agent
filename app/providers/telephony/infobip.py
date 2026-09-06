@@ -1,7 +1,7 @@
 """Infobip-backed telephony provider."""
 
 from app.config import Settings
-from app.telephony.base import PlacedCall, TelephonyProvider
+from app.telephony.base import PlacedCall
 from app.telephony.infobip_client import InfobipVoiceClient
 
 
@@ -20,6 +20,7 @@ class InfobipTelephonyProvider:
         audio_file_url: str | None = None,
         from_number: str | None = None,
         language: str | None = None,
+        client_reference: str | None = None,
     ) -> PlacedCall:
         result = await self.client.send_voice_message(
             to_e164,

@@ -1,16 +1,74 @@
 """Small authenticated operational surface."""
 
-from pydantic import BaseModel, Field
+from typing import Literal
+from uuid import UUID
 
 from fastapi import APIRouter, Header, HTTPException, status
+from pydantic import BaseModel, Field
 
 from app.config import get_settings
-from app.dependencies import development_store
+from app.dependencies import application_store, development_store
+from app.domain.enums import OutboundCallStatus
 from app.domain.exceptions import DomainError
+from app.services.call_outcomes import CallOutcomeService
 from app.services.family_directory import FamilyDirectory
 from app.telephony.calls import call_mom
+from app.utils.datetime import utc_now
 
 router = APIRouter(prefix="/internal", tags=["internal"])
+
+
+class CallStatusRequest(BaseModel):
+    call_id: UUID
+    provider_call_id: str = Field(min_length=1, max_length=128)
+    status: OutboundCallStatus
+
+
+class CallResponseRequest(BaseModel):
+    call_id: UUID
+    outcome: Literal["completed", "taken", "not_taken", "unclear", "call_later"]
+    delay_minutes: int | None = Field(default=None, ge=1, le=1440)
+
+
+@router.post("/call-response")
+async def call_response(
+    payload: CallResponseRequest, authorization: str | None = Header(default=None)
+) -> dict[str, str]:
+    """Trusted voice adapter reports explicit user responses, independently of call status."""
+    _authorize(authorization)
+    try:
+        async with application_store() as store:
+            CallOutcomeService(store, get_settings()).record_response(
+                payload.call_id, payload.outcome, delay_minutes=payload.delay_minutes, now=utc_now()
+            )
+    except DomainError as exc:
+        raise HTTPException(status_code=400, detail=exc.code) from exc
+    return {"status": "recorded"}
+
+
+@router.post("/call-status")
+async def call_status(payload: CallStatusRequest, authorization: str | None = Header(default=None)) -> dict[str, str]:
+    """Trusted normalized outcomes; future Twilio webhooks must validate signatures first."""
+    _authorize(authorization)
+    try:
+        async with application_store() as store:
+            CallOutcomeService(store, get_settings()).record_status(
+                payload.call_id, payload.provider_call_id, payload.status, now=utc_now()
+            )
+    except DomainError as exc:
+        raise HTTPException(status_code=400, detail=exc.code) from exc
+    return {"status": "recorded"}
+
+
+@router.get("/scheduler-status")
+async def scheduler_status(authorization: str | None = Header(default=None)) -> dict[str, int]:
+    """Operational counts without phone numbers or medication details."""
+    _authorize(authorization)
+    async with application_store() as store:
+        return {
+            status.value: sum(call.status == status for call in store.outbound_calls.values())
+            for status in OutboundCallStatus
+        }
 
 
 def _authorize(value: str | None) -> None:
@@ -31,6 +89,8 @@ async def delete_development_data(authorization: str | None = Header(default=Non
     """Support explicit local data deletion without exposing family data."""
 
     _authorize(authorization)
+    if get_settings().app_env == "production":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="development only")
     development_store().reset()
 
 
@@ -73,8 +133,9 @@ async def test_voice_call_mama(
 
     _authorize(authorization)
     settings = get_settings()
-    mama = FamilyDirectory(development_store()).by_name("Mama")
     try:
+        async with application_store(settings) as store:
+            mama = FamilyDirectory(store).by_name("Mama")
         placed = await call_mom(
             mama.phone_number_e164,
             payload.message,

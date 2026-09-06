@@ -8,6 +8,7 @@ class FamilyRole(StrEnum):
     TATA = "tata"
     BRANKO = "branko"
     NATASA = "natasa"
+    SVEN = "sven"
 
 
 class CallDirection(StrEnum):
@@ -61,6 +62,7 @@ class OutboundCallStatus(StrEnum):
     FAILED = "failed"
     COMPLETED = "completed"
     CANCELLED = "cancelled"
+    DELIVERY_UNKNOWN = "delivery_unknown"
 
 
 class OutboundCallPurpose(StrEnum):

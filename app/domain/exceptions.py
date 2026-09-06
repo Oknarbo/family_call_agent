@@ -56,3 +56,9 @@ class ConfirmationRequiredError(DomainError):
 class ProviderUnavailableError(DomainError):
     code = "provider_unavailable"
     user_message = "Ta usluga trenutačno nije dostupna."
+
+
+class CallNotPlacedError(ProviderUnavailableError):
+    """Provider/preflight positively reports that no call was placed."""
+
+    code = "call_not_placed"

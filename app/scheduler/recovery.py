@@ -1,50 +1,22 @@
-"""PostgreSQL-backed recovery of overdue work after downtime."""
+"""Rebuild Redis jobs from committed SQL outbox records."""
 
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
-
-from app.domain.enums import OutboundCallStatus, ReminderStatus
-from app.models import OutboundCall, Reminder
+from app.schemas import OutboundCallRecord
 
 
-async def recover_overdue_jobs(session: AsyncSession, redis: Any, *, now: datetime, batch_size: int = 100) -> int:
-    """Re-enqueue due source-of-truth rows using stable ARQ job IDs."""
-
-    reminders = (
-        await session.scalars(
-            select(Reminder)
-            .where(Reminder.status == ReminderStatus.SCHEDULED, Reminder.scheduled_for <= now)
-            .order_by(Reminder.scheduled_for)
-            .limit(batch_size)
-        )
-    ).all()
-    remaining = max(batch_size - len(reminders), 0)
-    calls = (
-        await session.scalars(
-            select(OutboundCall)
-            .where(
-                OutboundCall.status == OutboundCallStatus.SCHEDULED,
-                OutboundCall.scheduled_for <= now,
-            )
-            .order_by(OutboundCall.scheduled_for)
-            .limit(remaining)
-        )
-    ).all()
-    for reminder in reminders:
-        await redis.enqueue_job(
-            "generic_outbound_reminder",
-            str(reminder.id),
-            reminder.idempotency_key,
-            _job_id=f"reminder:{reminder.idempotency_key}",
-        )
+async def enqueue_calls(redis: Any, calls: list[OutboundCallRecord], *, now: datetime, batch_size: int = 100) -> int:
+    queued = 0
     for call in calls:
-        await redis.enqueue_job(
-            "generic_outbound_reminder",
+        job = await redis.enqueue_job(
+            "dispatch_outbound_call",
             str(call.id),
-            call.idempotency_key,
-            _job_id=f"outbound:{call.idempotency_key}",
+            _job_id=f"outbound:{call.id}",
+            _defer_until=max(now, call.scheduled_for),
         )
-    return len(reminders) + len(calls)
+        if job is not None:
+            queued += 1
+        if queued >= batch_size:
+            break
+    return queued

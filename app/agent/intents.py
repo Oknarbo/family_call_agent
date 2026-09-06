@@ -61,9 +61,10 @@ REJECTIONS = {"ne", "nije", "otkaži", "ipak ne treba", "čekaj"}
 
 
 def classify_confirmation(text: str) -> str:
-    value = normalize_utterance(text).strip(".!?")
-    if value in CONFIRMATIONS or any(value.startswith(f"{phrase},") for phrase in CONFIRMATIONS):
-        return "confirmed"
+    value = normalize_utterance(text)
+    value = value.replace("đ", "d")
+    value = "".join(c for c in unicodedata.normalize("NFD", value) if not unicodedata.combining(c))
+    value = " ".join(re.sub(r"[^\w\s]", " ", value).split())
     if value in REJECTIONS:
         return "rejected"
     if any(
@@ -78,6 +79,17 @@ def classify_confirmation(text: str) -> str:
         )
     ):
         return "correction_requested"
+    # Consume the whole answer, including repeated short confirmations. A
+    # positive prefix never overrides a negative or corrective clause.
+    phrases = {
+        "".join(c for c in unicodedata.normalize("NFD", p.replace("đ", "d")) if not unicodedata.combining(c))
+        for p in CONFIRMATIONS
+    }
+    pattern = "|".join(re.escape(p) for p in sorted(phrases, key=len, reverse=True))
+    if re.fullmatch(rf"(?:{pattern})(?:\s+(?:{pattern}))*", value):
+        return "confirmed"
+    if value in {"otkazi", "cekaj"}:
+        return "rejected"
     return "unclear"
 
 

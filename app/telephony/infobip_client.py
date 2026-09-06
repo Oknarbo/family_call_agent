@@ -7,7 +7,7 @@ import httpx
 import structlog
 
 from app.config import Settings
-from app.domain.exceptions import ProviderUnavailableError, ValidationError
+from app.domain.exceptions import CallNotPlacedError, ProviderUnavailableError, ValidationError
 
 logger = structlog.get_logger(__name__)
 
@@ -29,9 +29,9 @@ class InfobipVoiceClient:
 
     def _require_configured(self) -> None:
         if not self.settings.infobip_api_key:
-            raise ProviderUnavailableError("Infobip API key is not configured")
+            raise CallNotPlacedError("Infobip API key is not configured")
         if not self.settings.infobip_from_number:
-            raise ProviderUnavailableError("Infobip sender number is not configured")
+            raise CallNotPlacedError("Infobip sender number is not configured")
 
     @staticmethod
     def _normalize_e164(value: str) -> str:

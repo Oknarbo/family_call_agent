@@ -4,7 +4,7 @@ from uuid import UUID, uuid5
 
 from app.config import Settings
 from app.domain.enums import FamilyRole
-from app.domain.exceptions import InactiveCallerError, NotFoundError, UnknownCallerError
+from app.domain.exceptions import InactiveCallerError, NotFoundError, UnknownCallerError, ValidationError
 from app.repositories.protocols import Store
 from app.schemas import FamilyMemberRecord
 from app.utils.datetime import utc_now
@@ -42,7 +42,7 @@ class FamilyDirectory:
 
     def by_name(self, value: str) -> FamilyMemberRecord:
         normalized = value.casefold().strip()
-        aliases = {"mamu": "mama", "mami": "mama", "tatu": "tata", "tati": "tata"}
+        aliases = {"mamu": "mama", "mami": "mama", "tatu": "tata", "tati": "tata", "svena": "sven", "svenu": "sven"}
         normalized = aliases.get(normalized, normalized)
         member = next(
             (
@@ -56,8 +56,8 @@ class FamilyDirectory:
             raise NotFoundError
         return member
 
-    def seed(self, settings: Settings) -> list[FamilyMemberRecord]:
-        """Seed four stable users using environment-provided or synthetic development numbers."""
+    def seed(self, settings: Settings, *, only_role: FamilyRole | None = None) -> list[FamilyMemberRecord]:
+        """Add missing members; Sven is optional and existing records are preserved."""
 
         definitions = [
             ("Mama", FamilyRole.MAMA, settings.mama_phone_e164 or "+385910000001"),
@@ -65,9 +65,22 @@ class FamilyDirectory:
             ("Branko", FamilyRole.BRANKO, settings.branko_phone_e164 or "+385910000003"),
             ("Nataša", FamilyRole.NATASA, settings.natasa_phone_e164 or "+385910000004"),
         ]
+        if settings.sven_phone_e164:
+            definitions.append(("Sven", FamilyRole.SVEN, settings.sven_phone_e164))
+        definitions = [item for item in definitions if only_role is None or item[1] == only_role]
+        numbers = {member.phone_number_e164 for member in self.store.family_members.values()}
+        pending = []
+        for name, role, phone in definitions:
+            if uuid5(SEED_NAMESPACE, role.value) in self.store.family_members:
+                continue
+            normalized = normalize_phone_number(phone)
+            if normalized in numbers:
+                raise ValidationError("Each family member needs a distinct phone number")
+            numbers.add(normalized)
+            pending.append((name, role, normalized))
         now = utc_now()
         created: list[FamilyMemberRecord] = []
-        for name, role, phone in definitions:
+        for name, role, phone in pending:
             member_id = uuid5(SEED_NAMESPACE, role.value)
             member = FamilyMemberRecord(
                 id=member_id,
@@ -76,7 +89,12 @@ class FamilyDirectory:
                 role=role,
                 timezone=settings.default_timezone,
                 notification_preferences={"channels": ["call"]},
-                escalation_preferences={"safety_no_answer_attempts": settings.safety_escalate_after_no_answers},
+                escalation_preferences={
+                    "safety_no_answer_attempts": settings.safety_escalate_after_no_answers,
+                    "important_no_answer_contact_ids": [
+                        str(uuid5(SEED_NAMESPACE, contact)) for contact in ("branko", "natasa") if contact != role.value
+                    ],
+                },
                 created_at=now,
                 updated_at=now,
             )

@@ -5,6 +5,8 @@ from datetime import UTC, datetime
 from typing import Any, cast
 from uuid import UUID
 
+import structlog
+
 from app.agent.intents import (
     classify_confirmation,
     classify_intent,
@@ -198,6 +200,7 @@ class InboundNodes:
 
     def classify_confirmation_node(self, state: ConversationState) -> dict[str, Any]:
         status = classify_confirmation(state.get("current_utterance", ""))
+        structlog.get_logger(__name__).info("voice_confirmation_classified", result=status)
         return {"confirmation_status": status}
 
     def execute_write_tool(self, state: ConversationState) -> dict[str, Any]:
@@ -311,8 +314,19 @@ class InboundNodes:
         }
 
     def ask_confirmation_again(self, state: ConversationState) -> dict[str, Any]:
-        pending = state.get("pending_action") or {}
-        return {"response_text": f"Nisam razumio potvrdu. {pending.get('confirmation_text', '')}"}
+        pending = dict(state.get("pending_action") or {})
+        attempts = int(pending.get("unclear_confirmations", 0)) + 1
+        if attempts >= 3:
+            return {
+                "pending_action": None,
+                "confirmation_status": "rejected",
+                "response_text": "Nisam uspio razumjeti potvrdu. Zahtjev nije spremljen. Možeš ga zadati ponovno.",
+            }
+        pending["unclear_confirmations"] = attempts
+        return {
+            "pending_action": pending,
+            "response_text": "Nisam razumio potvrdu. Za potvrdu reci samo da. Za odustajanje reci ne.",
+        }
 
     def apply_correction(self, state: ConversationState) -> dict[str, Any]:
         pending = dict(state.get("pending_action") or {})
@@ -367,6 +381,9 @@ class InboundNodes:
             "branko": "Branko",
             "natašu": "Nataša",
             "nataša": "Nataša",
+            "sven": "Sven",
+            "svena": "Sven",
+            "svenu": "Sven",
         }
         for phrase, name in references.items():
             if re.search(rf"\b{phrase}\b", value):
@@ -397,7 +414,7 @@ class InboundNodes:
             flags=re.IGNORECASE,
         )
         if da_match:
-            return f"da {da_match.group(1).strip(' .,' )}"
+            return f"da {da_match.group(1).strip(' .,')}"
         return "na ono što si tražio"
 
     def _confirmation_text(self, intent: Intent, args: dict[str, Any], caller_id: UUID) -> str:
@@ -411,10 +428,7 @@ class InboundNodes:
             message = args["message"]
             if message.startswith("da "):
                 message = f"i reći joj {message}" if target_phrase != "tebe" else message
-            return (
-                f"U redu. Nazvat ću {target_phrase} {format_local(args['scheduled_for'])} "
-                f"{message}. Je li to točno?"
-            )
+            return f"U redu. Nazvat ću {target_phrase} {format_local(args['scheduled_for'])} {message}. Je li to točno?"
         if intent == Intent.MEDICATION_PLAN_CREATE:
             return medication_confirmation(
                 args["medication_name"],

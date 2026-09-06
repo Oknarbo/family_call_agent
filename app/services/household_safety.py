@@ -46,10 +46,12 @@ class HouseholdSafetyService:
     def next_action(self, outcome: SafetyReminderOutcome, attempt_number: int) -> str:
         if outcome == SafetyReminderOutcome.CALL_AGAIN_REQUESTED:
             return "retry"
-        if outcome != SafetyReminderOutcome.NO_ANSWER:
+        if outcome == SafetyReminderOutcome.COMPLETED:
             return "complete"
+        if outcome != SafetyReminderOutcome.NO_ANSWER:
+            return "clarify"
         if attempt_number >= self.settings.safety_escalate_after_no_answers:
             return "escalate"
         if attempt_number <= len(self.settings.safety_retry_delays_minutes):
             return "retry"
-        return "complete"
+        return "escalate"

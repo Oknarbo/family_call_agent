@@ -1,42 +1,33 @@
-"""Seed the four allowlisted family members into PostgreSQL."""
+"""Explicitly seed an empty database; never overwrite existing family settings."""
 
 import asyncio
 
-from sqlalchemy.ext.asyncio import AsyncSession
-
 from app.config import get_settings
-from app.db.session import create_session_factory
-from app.models import FamilyMember
-from app.repositories.memory import MemoryStore
+from app.dependencies import application_store
+from app.domain.enums import FamilyRole
 from app.services.family_directory import FamilyDirectory
 
 
-async def seed(session: AsyncSession) -> None:
-    settings = get_settings()
-    records = FamilyDirectory(MemoryStore()).seed(settings)
-    for record in records:
-        existing = await session.get(FamilyMember, record.id)
-        if existing is None:
-            session.add(
-                FamilyMember(
-                    id=record.id,
-                    display_name=record.display_name,
-                    phone_number_e164=record.phone_number_e164,
-                    role=record.role,
-                    timezone=record.timezone,
-                    is_active=record.is_active,
-                    notification_preferences=record.notification_preferences,
-                    escalation_preferences=record.escalation_preferences,
-                    preferred_assistant_wording=record.preferred_assistant_wording,
-                )
-            )
-    await session.commit()
-
-
 async def async_main() -> None:
-    factory = create_session_factory()
-    async with factory() as session:
-        await seed(session)
+    settings = get_settings()
+    async with application_store(settings) as store:
+        if store.family_members:
+            if settings.sven_phone_e164:
+                added = FamilyDirectory(store).seed(settings, only_role=FamilyRole.SVEN)
+                print("Sven je dodan u bazu." if added else "Sven već postoji; postojeće postavke su sačuvane.")
+            print("Obitelj već postoji; postojeći brojevi i postavke ostaju sačuvani.")
+            return
+        if settings.app_env == "production" and not all(
+            (
+                settings.mama_phone_e164,
+                settings.tata_phone_e164,
+                settings.branko_phone_e164,
+                settings.natasa_phone_e164,
+            )
+        ):
+            raise ValueError("Za početni produkcijski seed unesi sva četiri obiteljska broja.")
+        FamilyDirectory(store).seed(settings)
+    print("Obitelj je spremljena u bazu.")
 
 
 if __name__ == "__main__":

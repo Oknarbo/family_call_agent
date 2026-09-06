@@ -1,9 +1,18 @@
 .env
-.env.sh
+.env.*
+!.env.example
+github-publish/
+.docs-backup/
+*.zip
+*.wav
+*.mp3
+.azure-setup-*
+zvonko-azure-preview.wav
 .venv/
 __pycache__/
 *.py[cod]
 .pytest_cache/
+.test-tmp-*/
 .mypy_cache/
 .ruff_cache/
 .coverage
@@ -12,3 +21,6 @@ dist/
 build/
 *.egg-info/
 zvonko-dev.json
+*.db
+*.db-shm
+*.db-wal

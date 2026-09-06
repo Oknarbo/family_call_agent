@@ -135,6 +135,15 @@ class OutboundCallRecord(DomainRecord):
     related_entity_id: UUID
     status: OutboundCallStatus = OutboundCallStatus.SCHEDULED
     attempt_number: int = 1
+    provider_call_id: str | None = None
+    started_at: datetime | None = None
+    answered_at: datetime | None = None
+    ended_at: datetime | None = None
+    occurrence_for: datetime | None = None
+    source_version: str = ""
+    priority: int = 0
+    error_code: str | None = None
+    user_outcome: str | None = None
     idempotency_key: str
     created_at: datetime
     updated_at: datetime

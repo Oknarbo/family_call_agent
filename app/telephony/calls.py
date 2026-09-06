@@ -13,6 +13,7 @@ async def call_mom(
     audio_file_url: str | None = None,
     language: str | None = None,
     settings: Settings | None = None,
+    client_reference: str | None = None,
 ) -> PlacedCall:
     """Place an outbound voice call that speaks `message` or plays `audio_file_url`."""
 
@@ -24,4 +25,5 @@ async def call_mom(
         audio_file_url=audio_file_url,
         from_number=from_number,
         language=language,
+        client_reference=client_reference,
     )

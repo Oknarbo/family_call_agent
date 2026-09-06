@@ -5,7 +5,7 @@ from datetime import datetime, time
 from decimal import Decimal
 from typing import Any
 
-from sqlalchemy import JSON, Boolean, DateTime, Enum, ForeignKey, Integer, Numeric, String, Text, Time
+from sqlalchemy import JSON, Boolean, DateTime, Enum, ForeignKey, Index, Integer, Numeric, String, Text, Time
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.domain.enums import (
@@ -131,6 +131,9 @@ class DoctorAppointment(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     notes: Mapped[str | None] = mapped_column(Text)
     status: Mapped[AppointmentStatus] = mapped_column(enum_column(AppointmentStatus), nullable=False)
     source_call_id: Mapped[str | None] = mapped_column(String(128))
+    reminder_offsets_minutes: Mapped[list[int]] = mapped_column(JSON, default=lambda: [1440, 120], nullable=False)
+    notify_user_ids: Mapped[list[str]] = mapped_column(JSON, default=list, nullable=False)
+    idempotency_key: Mapped[str | None] = mapped_column(String(255), unique=True)
 
 
 class AppointmentReminder(UUIDPrimaryKeyMixin, TimestampMixin, Base):
@@ -147,6 +150,7 @@ class AppointmentReminder(UUIDPrimaryKeyMixin, TimestampMixin, Base):
 
 class OutboundCall(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     __tablename__ = "outbound_calls"
+    __table_args__ = (Index("ix_outbound_calls_status_scheduled_for", "status", "scheduled_for"),)
     target_user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("family_members.id"), nullable=False)
     reminder_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("reminders.id"))
     medication_dose_event_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("medication_dose_events.id"))
@@ -156,10 +160,18 @@ class OutboundCall(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     scheduled_for: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     status: Mapped[OutboundCallStatus] = mapped_column(enum_column(OutboundCallStatus), nullable=False)
     attempt_number: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
-    idempotency_key: Mapped[str] = mapped_column(String(128), unique=True, nullable=False)
+    idempotency_key: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     answered_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     ended_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    message: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    related_entity_type: Mapped[str] = mapped_column(String(64), default="legacy", nullable=False)
+    related_entity_id: Mapped[uuid.UUID | None] = mapped_column(nullable=True)
+    occurrence_for: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    source_version: Mapped[str] = mapped_column(String(64), default="", nullable=False)
+    priority: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    error_code: Mapped[str | None] = mapped_column(String(64))
+    user_outcome: Mapped[str | None] = mapped_column(String(64))
 
 
 class Notification(UUIDPrimaryKeyMixin, Base):
@@ -173,6 +185,13 @@ class Notification(UUIDPrimaryKeyMixin, Base):
     delivery_status: Mapped[DeliveryStatus] = mapped_column(enum_column(DeliveryStatus), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     delivered_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    idempotency_key: Mapped[str | None] = mapped_column(String(255), unique=True)
+
+
+class IdempotencyEntry(Base):
+    __tablename__ = "idempotency_entries"
+    key: Mapped[str] = mapped_column(String(255), primary_key=True)
+    entity_id: Mapped[uuid.UUID] = mapped_column(nullable=False)
 
 
 class AuditEvent(UUIDPrimaryKeyMixin, Base):

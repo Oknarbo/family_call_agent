@@ -1,6 +1,7 @@
 """Text simulator using the exact inbound LangGraph used by voice transports."""
 
 import argparse
+import asyncio
 import json
 from datetime import UTC, datetime
 from pathlib import Path
@@ -11,7 +12,10 @@ from app.agent.graph import build_inbound_graph
 from app.agent.prompts import INTRODUCTION
 from app.agent.state import ConversationState
 from app.config import get_settings
+from app.dependencies import application_store
 from app.repositories.memory import MemoryStore
+from app.repositories.protocols import Store
+from app.services.conversation import conversation_turn
 from app.services.family_directory import FamilyDirectory
 
 
@@ -20,17 +24,17 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--caller",
         default=None,
-        choices=["mama", "tata", "branko", "nataša", "unknown"],
+        choices=["mama", "tata", "branko", "nataša", "sven", "unknown"],
         help="Tko zove Zvonka (obavezno za razgovor)",
     )
-    parser.add_argument("--data", type=Path, default=Path("zvonko-dev.json"))
+    parser.add_argument("--data", type=Path, help="Opcionalna odvojena JSON simulacija; zadano koristi DATABASE_URL")
     parser.add_argument("--reset", action="store_true", help="Obriši lokalne razvojne podatke")
     parser.add_argument("--show-state", action="store_true", help="Prikaži spremljeno strukturirano stanje")
     parser.add_argument("--simulate-due", action="store_true", help="Prikaži dospjele zakazane događaje")
     return parser
 
 
-def _show_state(store: MemoryStore) -> None:
+def _show_state(store: Store) -> None:
     data = {
         "reminders": [record.model_dump(mode="json") for record in store.reminders.values()],
         "medication_plans": [record.model_dump(mode="json") for record in store.medication_plans.values()],
@@ -39,7 +43,7 @@ def _show_state(store: MemoryStore) -> None:
     print(json.dumps(data, ensure_ascii=False, indent=2))
 
 
-def _simulate_due(store: MemoryStore) -> None:
+def _simulate_due(store: Store) -> None:
     now = datetime.now(UTC)
     due = [item for item in store.reminders.values() if item.scheduled_for <= now]
     if not due:
@@ -49,8 +53,46 @@ def _simulate_due(store: MemoryStore) -> None:
         print(f"Zvonko (simulirani poziv): {item.message}")
 
 
+async def _database_main(args: argparse.Namespace) -> None:
+    settings = get_settings()
+    if args.reset:
+        build_parser().error("--reset je dostupan samo uz --data za odvojenu JSON simulaciju")
+    async with application_store(settings) as store:
+        if args.show_state:
+            _show_state(store)
+            return
+        if args.simulate_due:
+            _simulate_due(store)
+            return
+        if args.caller is None:
+            build_parser().error("Odaberi pozivatelja s --caller")
+        caller = None if args.caller == "unknown" else FamilyDirectory(store).by_name(args.caller)
+    state: ConversationState = {
+        "call_id": f"cli-{uuid4()}",
+        "caller_phone": caller.phone_number_e164 if caller else "+385991234567",
+        "pending_action": None,
+        "now_iso": datetime.now(UTC).isoformat(),
+    }
+    print(f"Zvonko: {INTRODUCTION}")
+    while True:
+        try:
+            utterance = input(f"{caller.display_name if caller else 'Pozivatelj'}: ").strip()
+        except (EOFError, KeyboardInterrupt):
+            break
+        if utterance.casefold() in {"izlaz", "kraj", "doviđenja"}:
+            break
+        state["current_utterance"] = utterance
+        state["now_iso"] = datetime.now(UTC).isoformat()
+        state = await conversation_turn(state, settings)
+        print(f"Zvonko: {state.get('response_text')}")
+    print("Zvonko: Doviđenja.")
+
+
 def main() -> None:
     args = build_parser().parse_args()
+    if args.data is None:
+        asyncio.run(_database_main(args))
+        return
     settings = get_settings()
     store = MemoryStore(args.data)
     directory = FamilyDirectory(store)

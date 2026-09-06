@@ -19,4 +19,5 @@ class TelephonyProvider(Protocol):
         audio_file_url: str | None = None,
         from_number: str | None = None,
         language: str | None = None,
+        client_reference: str | None = None,
     ) -> PlacedCall: ...

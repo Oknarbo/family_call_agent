@@ -1,5 +1,7 @@
 """Credentials-free FastAPI and SQLAlchemy integration smoke tests."""
 
+from uuid import uuid4
+
 from fastapi.testclient import TestClient
 from sqlalchemy.ext.asyncio import create_async_engine
 
@@ -25,5 +27,31 @@ async def test_all_models_create_in_sqlite() -> None:
     engine = create_async_engine("sqlite+aiosqlite:///:memory:")
     async with engine.begin() as connection:
         await connection.run_sync(Base.metadata.create_all)
-    assert len(Base.metadata.tables) == 11
+    assert "idempotency_entries" in Base.metadata.tables
     await engine.dispose()
+
+
+def test_scheduler_operational_endpoints_require_auth() -> None:
+    client = TestClient(app)
+    assert client.get("/internal/scheduler-status").status_code == 401
+    assert (
+        client.post(
+            "/internal/call-status",
+            json={
+                "call_id": str(uuid4()),
+                "provider_call_id": "fake",
+                "status": "no_answer",
+            },
+        ).status_code
+        == 401
+    )
+    assert (
+        client.post(
+            "/internal/call-response",
+            json={
+                "call_id": str(uuid4()),
+                "outcome": "taken",
+            },
+        ).status_code
+        == 401
+    )

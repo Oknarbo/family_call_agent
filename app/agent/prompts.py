@@ -50,7 +50,9 @@ def medication_confirmation(
     target_phrase: str = "tebe",
     inventory: int | None = None,
 ) -> str:
-    stock = f" Kod {target_phrase} trenutačno ima {inventory}." if inventory is not None and target_phrase != "tebe" else ""
+    stock = (
+        f" Kod {target_phrase} trenutačno ima {inventory}." if inventory is not None and target_phrase != "tebe" else ""
+    )
     if inventory is not None and target_phrase == "tebe":
         stock = f" Trenutačno ih imaš {inventory}."
     if target_phrase == "tebe":

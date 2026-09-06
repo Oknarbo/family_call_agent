@@ -1,5 +1,6 @@
 """Household safety reminder outcome graph."""
 
+import re
 from typing import TypedDict
 
 from langgraph.graph import END, START, StateGraph
@@ -15,15 +16,27 @@ class SafetyOutboundState(TypedDict, total=False):
 
 
 def _classify(text: str) -> str:
-    value = text.casefold()
-    if any(word in value for word in ("jesam", "ugasila", "maknula", "gotov")):
-        return "completed"
-    if "nazovi" in value or "zovni" in value:
-        return "call_again_requested"
-    if any(word in value for word in ("nisam", "još nije")):
-        return "not_completed"
-    if not value.strip():
+    value = " ".join(text.casefold().split()).strip(" .!?,")
+    if not value:
         return "no_answer"
+    # Doubt and negation take precedence over words such as "jesam" or "ugasila".
+    if re.search(r"\b(ne znam|ne sjećam se|nisam siguran|nisam sigurna|možda|valjda|mislim|jesam li)\b", value):
+        return "unclear"
+    if re.search(r"\b(nazovi|zovni|podsjeti)\b", value) and not re.search(r"\b(ne|nemoj)\b", value):
+        return "call_again_requested"
+    if re.search(r"\b(ne|nisam|nismo|nije|nisu|nemoj)\b", value):
+        return "not_completed"
+    # Only explicit, bounded confirmations complete a reminder. Extra clauses
+    # require clarification instead of being accepted by substring matching.
+    if re.fullmatch(
+        r"(?:(?:da|jesam)[, ]+)?(?:"
+        r"jesam|da|gotovo|gotov je čaj|"
+        r"(?:ugasila|ugasio|maknula|maknuo|isključila|isključio) sam"
+        r"(?: (?:plin|štednjak|pećnicu|čaj|čajnik|lonac|glačalo))?"
+        r")",
+        value,
+    ):
+        return "completed"
     return "unclear"
 
 
@@ -42,7 +55,9 @@ def build_safety_outbound_graph() -> object:
             return {"action": "escalate"}
         if outcome == "no_answer":
             return {"action": "retry"}
-        return {"action": "complete"}
+        if outcome == "completed":
+            return {"action": "complete"}
+        return {"action": "clarify"}
 
     graph.add_node("apply_retry_policy", policy)
     graph.add_edge(START, "load_safety_reminder")
